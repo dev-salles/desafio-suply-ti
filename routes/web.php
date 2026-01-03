@@ -10,8 +10,6 @@ Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
     ]);
 });
 
@@ -35,5 +33,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('/api/ufs', [App\Http\Controllers\TrechoController::class, 'getUfs']);
 
 Route::get('/api/rodovias/{uf}', [App\Http\Controllers\TrechoController::class, 'getRodovias']);
+
+Route::delete('/trechos/{trecho}', [TrechoController::class, 'destroy'])->name('trechos.destroy');
+
+Route::get('/trechos/{trecho}/edit', [TrechoController::class, 'edit'])->name('trechos.edit');
+
+Route::get('/', function () {
+    return Inertia::render('Welcome');
+})->name('home');
+
+Route::put('/trechos/{trecho}', [TrechoController::class, 'update'])->name('trechos.update');
 
 require __DIR__.'/auth.php';

@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Trecho extends Model
 {
+    use HasFactory;
+
     // Permite preenchimento em massa (importante para o formulário)
     protected $fillable = [
         'data_referencia', 

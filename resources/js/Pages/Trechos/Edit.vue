@@ -1,130 +1,89 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, useForm, Link } from "@inertiajs/vue3";
-import { ref, watch } from "vue";
+import { Head, useForm, Link } from "@inertiajs/vue3"; // Importação do Link corrigida!
+import { ref, watch, onMounted } from "vue";
 import axios from "axios";
 
-// Definimos as props explicitamente
 const props = defineProps({
-    ufs: {
-        type: Array,
-        default: () => [],
-    },
+    trecho: Object,
+    ufs: Array,
 });
 
 const rodovias = ref([]);
+
 const carregandoRodovias = ref(false);
 
 const form = useForm({
-    data_referencia: new Date().toISOString().split("T")[0],
-    uf_id: "",
-    rodovia_id: "",
-    tipo: "B",
-    km_inicial: "",
-    km_final: "",
+    data_referencia: props.trecho.data_referencia
+        ? props.trecho.data_referencia.split("T")[0]
+        : "",
+    uf_id: props.trecho.uf_id,
+    rodovia_id: props.trecho.rodovia_id,
+    tipo: props.trecho.tipo,
+    km_inicial: props.trecho.km_inicial,
+    km_final: props.trecho.km_final,
 });
 
-// Lógica da UF (Mantenha como está, apenas garanta que props.ufs existe)
+// Função para buscar rodovias (mesma lógica do Create)
+const buscarRodovias = async (ufId) => {
+    if (!ufId) return;
+    carregandoRodovias.value = true; // Ativa o estado de carregamento
+    try {
+        const uf = props.ufs.find((u) => u.id === ufId);
+        if (uf) {
+            const response = await axios.get(`/api/rodovias/${uf.sigla}`);
+            let lista = Array.isArray(response.data)
+                ? response.data
+                : response.data[0].split(",");
+            
+            // DICA: Use o .map(r => r.trim()) para garantir que não existam espaços escondidos
+            rodovias.value = lista.map(r => r.trim());
+        }
+    } catch (error) {
+        console.error("Erro ao buscar rodovias:", error);
+    } finally {
+        carregandoRodovias.value = false; // Desativa o carregamento
+    }
+};
+
+onMounted(async () => {
+    if (form.uf_id) {
+        await buscarRodovias(form.uf_id);
+        form.rodovia_id = props.trecho.rodovia_id;
+    }
+});
+
 watch(
     () => form.uf_id,
-    async (ufId) => {
-        rodovias.value = [];
-        form.rodovia_id = "";
-
-        if (!ufId) return;
-
-        const ufSelecionada = props.ufs.find((u) => u.id === ufId);
-
-        if (ufSelecionada) {
-            carregandoRodovias.value = true;
-            try {
-                const response = await axios.get(
-                    `/api/rodovias/${ufSelecionada.sigla}`
-                );
-                if (
-                    Array.isArray(response.data) &&
-                    response.data.length === 1 &&
-                    response.data[0].includes(",")
-                ) {
-                    rodovias.value = response.data[0].split(",");
-                } else {
-                    rodovias.value = response.data;
-                }
-            } catch (error) {
-                console.error("Erro na requisição:", error);
-            } finally {
-                carregandoRodovias.value = false;
-            }
-        }
-    }
+    (newId) => buscarRodovias(newId)
 );
 
 const submit = () => {
-    form.post(route("trechos.store"), {
-        preserveScroll: true,
+    form.put(route("trechos.update", props.trecho.id), {
         onSuccess: () => {
-            console.log("Sucesso!");
+            console.log("Trecho atualizado com sucesso!");
+        },
+        onError: (errors) => {
+            console.error("Erros na validação:", errors);
         },
     });
 };
 </script>
 
 <template>
-    <Head title="Cadastrar Trecho" />
-
+    <Head title="Editar Trecho" />
     <AuthenticatedLayout>
         <template #header>
-            <div
-                class="bg-white p-6 rounded-lg shadow-sm mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-            >
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    Cadastrar Trecho Rodoviário
+            <div class="flex justify-between items-center">
+                <h2 class="font-semibold text-xl text-gray-800">
+                    Editar Trecho: {{ trecho.id }}
                 </h2>
-                <div class="flex items-center gap-3">
-                    <Link
-                        :href="route('trechos.index')"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                            />
-                        </svg>
-                        Cancelar
-                    </Link>
-
-                    <Link
-                        :href="route('logout')"
-                        method="post"
-                        as="button"
-                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 shadow-md font-medium cursor-pointer"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                            />
-                        </svg>
-                        Sair
-                    </Link>
-                </div>
+                <Link
+                    :href="route('trechos.index')"
+                    class="px-4 py-2 bg-gray-500 text-white rounded-lg cursor-pointer"
+                >
+                    Cancelar
+                </Link>
             </div>
         </template>
 
@@ -267,13 +226,13 @@ const submit = () => {
                         >
                             <button
                                 type="submit"
-                                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition ease-in-out duration-150"
                                 :disabled="form.processing"
+                                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md font-medium disabled:opacity-50 cursor-pointer"
                             >
                                 <span v-if="form.processing"
                                     >Processando...</span
                                 >
-                                <span v-else>Salvar Trecho</span>
+                                <span v-else>Atualizar Trecho</span>
                             </button>
                         </div>
                     </form>
