@@ -62,6 +62,17 @@ const page = usePage();
 
 const message = computed(() => page.props.flash?.success);
 
+const tituloRodovia = computed(() => {
+    // Se o usuário selecionou algo novo no formulário, mostramos o novo
+    if (form.rodovia_id) {
+        
+        return props.trecho.rodovia?.nome || "N/A";
+    }
+    // Se não, mostramos o nome que veio do banco de dados (que agora carregamos no controller)
+    return form.rodovia_id; 
+});
+
+
 const submit = () => {
     form.transform((data) => ({
         ...data,
@@ -85,13 +96,13 @@ const submit = () => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800">
-                    Editar Trecho: {{ trecho.id }}
+                    Editar Trecho: <span class="ml-1 pb-1 text-blue-700 font-bold">BR - {{ tituloRodovia }}</span>
                 </h2>
                 <Link
                     :href="route('trechos.index')"
-                    class="px-4 py-2 bg-gray-500 text-white rounded-lg cursor-pointer"
+                    class="px-4 py-2 bg-red-500 text-white rounded-lg cursor-pointer"
                 >
-                    Cancelar
+                     Cancelar
                 </Link>
             </div>
         </template>

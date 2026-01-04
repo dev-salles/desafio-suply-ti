@@ -19,7 +19,9 @@ class TrechoController extends Controller
     public function index()
     {
         // Substituímos o get() por paginate(10) para gerar os links de página
-        $trechos = Trecho::with(['uf', 'rodovia'])->paginate(10);
+        $trechos = Trecho::with(['uf', 'rodovia'])
+        ->latest()
+        ->paginate(10);
 
         return Inertia::render('Trechos/Index', [
             'trechos' => $trechos
@@ -41,6 +43,9 @@ class TrechoController extends Controller
     {
         // Buscamos as UFs para preencher o select, igual no Create
         $ufs = \App\Models\Uf::all();
+
+        $trecho->load('rodovia');
+
         return Inertia::render('Trechos/Edit', [
             'trecho' => $trecho,
             'ufs' => $ufs
@@ -160,7 +165,7 @@ class TrechoController extends Controller
     public function show(Trecho $trecho)
     {
         // Carregamos a relação da UF para mostrar a sigla no mapa
-        $trecho->load('uf');
+        $trecho->load(['uf', 'rodovia']);
 
         return Inertia::render('Trechos/ShowMap', [
             'trecho' => $trecho

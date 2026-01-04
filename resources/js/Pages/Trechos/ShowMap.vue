@@ -67,7 +67,7 @@ onMounted(async () => {
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                     Mapa da Rodovia:
-                    {{ trecho.rodovia?.nome || trecho.rodovia_id }}
+                    BR - {{ trecho.rodovia?.nome || trecho.rodovia_id }}
                 </h2>
                 <Link
                     :href="route('trechos.index')"

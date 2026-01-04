@@ -13,18 +13,7 @@ const flashError = computed(() => page.props.flash?.error);
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-100">
-        <nav class="border-b border-gray-100 bg-white">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex h-16 justify-between items-center">
-                    <div class="flex">
-                        <Link :href="route('trechos.index')">
-                            <ApplicationLogo class="block h-9 w-auto fill-current text-gray-800" />
-                        </Link>
-                    </div>
-                </div>
-            </div>
-        </nav>
+    <div class="min-h-screen bg-gray-100">  
 
         <header class="bg-white shadow" v-if="$slots.header">
             <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
