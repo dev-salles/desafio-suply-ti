@@ -13,11 +13,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        //
+        $middleware->redirectUsersTo(fn () => route('trechos.index')); 
+
+        $middleware->redirectGuestsTo(function () {
+            // Aqui enviamos a mensagem de erro para a sessão antes de ir para o login | Infelizmente não deu tempo de corrigir isso.
+            session()->flash('error', 'É necessário estar logado para acessar esta área!');
+            return route('login');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
     })->create();

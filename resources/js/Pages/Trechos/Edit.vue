@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, useForm, Link } from "@inertiajs/vue3"; // Importação do Link corrigida!
-import { ref, watch, onMounted } from "vue";
+import { Head, useForm, Link, usePage } from "@inertiajs/vue3"; // Importação do Link corrigida!
+import { ref, watch, onMounted, computed } from "vue";
 import axios from "axios";
 
 const props = defineProps({
@@ -58,20 +58,29 @@ watch(
     (newId) => buscarRodovias(newId)
 );
 
+const page = usePage();
+
+const message = computed(() => page.props.flash?.success);
+
 const submit = () => {
-    form.put(route("trechos.update", props.trecho.id), {
+    form.transform((data) => ({
+        ...data,
+        _method: 'put',
+    })).post(route("trechos.update", props.trecho.id), {
         onSuccess: () => {
-            console.log("Trecho atualizado com sucesso!");
+            // A mensagem virá automaticamente pelo redirecionamento do Controller
         },
         onError: (errors) => {
             console.error("Erros na validação:", errors);
         },
     });
 };
+
 </script>
 
 <template>
     <Head title="Editar Trecho" />
+
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">

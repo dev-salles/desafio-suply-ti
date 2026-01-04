@@ -5,7 +5,9 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import Toast from '@/Components/Toast.vue';
+import { computed, watch, ref } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 
 defineProps({
     canResetPassword: {
@@ -27,15 +29,41 @@ const submit = () => {
         onFinish: () => form.reset('password'),
     });
 };
+
+const page = usePage();
+const showToast = ref(false);
+
+// Use o computed para monitorar a prop do Inertia
+const errorMessage = computed(() => page.props.flash?.error);
+
+watch(errorMessage, (newVal) => {
+    if (newVal) {
+        // Um pequeno delay garante que o componente Toast 
+        // interaja corretamente com a renderização do Vue
+        setTimeout(() => {
+            showToast.value = true;
+        }, 100);
+    }
+}, { immediate: true });
+
 </script>
 
 <template>
     <GuestLayout>
         <Head title="Log in" />
 
+        <Toast 
+            v-if="showToast" 
+            :message="errorMessage" 
+            type="error" 
+            @close="showToast = false"
+        />
+
         <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
             {{ status }}
         </div>
+
+        <pre v-if="false">{{ $page.props.flash }}</pre>
 
         <form @submit.prevent="submit">
             <div>

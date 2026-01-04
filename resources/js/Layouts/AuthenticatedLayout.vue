@@ -18,7 +18,7 @@ const flashError = computed(() => page.props.flash?.error);
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex h-16 justify-between items-center">
                     <div class="flex">
-                        <Link :href="route('dashboard')">
+                        <Link :href="route('trechos.index')">
                             <ApplicationLogo class="block h-9 w-auto fill-current text-gray-800" />
                         </Link>
                     </div>
@@ -36,17 +36,20 @@ const flashError = computed(() => page.props.flash?.error);
             <slot />
         </main>
 
-        <Toast 
-            v-if="flashSuccess" 
-            :message="flashSuccess" 
-            type="success" 
-            :key="flashSuccess" 
-        />
-        <Toast 
-            v-if="flashError" 
-            :message="flashError" 
-            type="error" 
-            :key="flashError" 
-        />
+        <div class="fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none">
+            <Toast 
+                v-if="$page.props.flash.success" 
+                :message="$page.props.flash.success" 
+                type="success" 
+                :key="$page.props.flash.success"
+            />
+
+            <Toast 
+                v-if="$page.props.flash.error" 
+                :message="$page.props.flash.error" 
+                type="error" 
+                :key="$page.props.flash.error"
+            />
+        </div>
     </div>
 </template>

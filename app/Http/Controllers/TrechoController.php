@@ -7,6 +7,7 @@ use App\Models\Rodovia;
 use App\Models\Trecho;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
@@ -17,9 +18,10 @@ class TrechoController extends Controller
      */
     public function index()
     {
-        $trechos = Trecho::with(['uf', 'rodovia'])->latest()->paginate(10);
+        // Substituímos o get() por paginate(10) para gerar os links de página
+        $trechos = Trecho::with(['uf', 'rodovia'])->paginate(10);
 
-        return inertia('Trechos/Index', [
+        return Inertia::render('Trechos/Index', [
             'trechos' => $trechos
         ]);
     }
@@ -90,8 +92,9 @@ class TrechoController extends Controller
 
         $trecho->update($validated);
 
-        return redirect()->route('trechos.index')
-            ->with('success', 'Trecho atualizado com sucesso!');
+        session()->flash('success', 'Trecho atualizado com sucesso!');
+    
+        return redirect()->route('trechos.index');
     }
 
     public function destroy(Trecho $trecho)
@@ -152,6 +155,16 @@ class TrechoController extends Controller
         Trecho::create($validated);
 
         return redirect()->route('trechos.index')->with('success', 'Trecho cadastrado com sucesso!');
+    }
+
+    public function show(Trecho $trecho)
+    {
+        // Carregamos a relação da UF para mostrar a sigla no mapa
+        $trecho->load('uf');
+
+        return Inertia::render('Trechos/ShowMap', [
+            'trecho' => $trecho
+        ]);
     }
 
     public function getRodovias($uf)

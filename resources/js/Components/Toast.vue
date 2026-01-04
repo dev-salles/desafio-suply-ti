@@ -1,46 +1,32 @@
 <template>
-  <transition name="slide">
-    <div v-if="show" :class="['toast', type === 'success' ? 'bg-green-500' : 'bg-red-500']">
-      <div class="flex items-center gap-2 text-white font-medium p-4 rounded-lg shadow-xl">
-        <span>{{ mensagemLimpa }}</span>
-      </div>
-    </div>
-  </transition>
+  <div v-if="visible" class="fixed top-5 right-5 z-[9999] bg-green-500 text-white p-4 rounded shadow-lg">
+    {{ message }}
+  </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 
 const props = defineProps(['message', 'type']);
-const show = ref(false);
+const visible = ref(true);
 
-// Esta propriedade computada remove tudo que vem após o "|"
-const mensagemLimpa = computed(() => {
-    if (!props.message) return '';
-    return props.message.split('|')[0]; // Pega apenas a primeira parte
+onMounted(() => {
+    // Some após 3 segundos
+    setTimeout(() => visible.value = false, 3000);
 });
-
-const triggerToast = () => {
-    show.value = true;
-    setTimeout(() => show.value = false, 4000);
-};
-
-watch(() => props.message, (newMsg) => {
-    if (newMsg) {
-        show.value = false;
-        setTimeout(() => triggerToast(), 50);
-    }
-}, { immediate: true });
 </script>
 
 <style scoped>
-.toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
+/* Mantive o Slide, mas otimizado para a direita */
+.slide-enter-active, .slide-leave-active { 
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
 }
-.slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
-.slide-enter-from { transform: translateX(100%); opacity: 0; }
-.slide-leave-to { transform: translateX(100%); opacity: 0; }
+.slide-enter-from { 
+    transform: translateX(120%); 
+    opacity: 0; 
+}
+.slide-leave-to { 
+    transform: translateX(120%); 
+    opacity: 0; 
+}
 </style>

@@ -34,8 +34,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
-            // Adicione este bloco aqui:
             'flash' => [
+                // Usamos session() diretamente para garantir que o Laravel busque o dado flash
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],

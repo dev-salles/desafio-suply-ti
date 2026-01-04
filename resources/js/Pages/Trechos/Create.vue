@@ -60,13 +60,17 @@ watch(
 );
 
 const submit = () => {
-    form.post(route("trechos.store"), {
-        preserveScroll: true,
+    form.post(route('trechos.store'), {
         onSuccess: () => {
-            console.log("Sucesso!");
+            console.log("Salvo com sucesso!");
+        },
+        onError: (errors) => {
+            // Se houver erro de validação, ele cai aqui
+            console.error("Erro de validação:", errors);
         },
     });
 };
+
 </script>
 
 <template>
