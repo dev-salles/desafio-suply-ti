@@ -10,9 +10,6 @@ class UfSeeder extends Seeder
 {
     public function run(): void
     {
-        Schema::disableForeignKeyConstraints();
-        DB::table('ufs')->truncate();
-
         $siglas = [
             'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
             'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
@@ -20,10 +17,10 @@ class UfSeeder extends Seeder
         ];
 
         foreach ($siglas as $sigla) {
-            DB::table('ufs')->insert(['sigla' => $sigla]);
+            DB::table('ufs')->updateOrInsert(
+                ['sigla' => $sigla],
+                ['updated_at' => now()]
+            );
         }
-
-        Schema::enableForeignKeyConstraints();
     }
-
 }

@@ -4,7 +4,7 @@ cd /var/www/html
 
 echo "Forçando drivers e porta de produção..."
 
-# Forçamos as variáveis de ambiente
+# Variáveis de ambiente forçadas para garantir consistência
 export DB_CONNECTION=pgsql
 export DB_PORT=5432
 export CACHE_STORE=file
@@ -15,12 +15,12 @@ echo "Limpando caches..."
 /usr/bin/php8.3 artisan cache:clear
 
 if [ ! -z "$DATABASE_URL" ]; then
-    echo "Configurando banco de dados PostgreSQL na porta 5432..."
-    # Rodamos a migration
-    /usr/bin/php8.3 artisan migrate --force
+    echo "Configurando banco de dados e populando tabelas (Seed)..."
+    # O comando abaixo roda as migrações e, em seguida, os seeders
+    /usr/bin/php8.3 artisan migrate --force --seed
 fi
 
-echo "Gerando novos caches..."
+echo "Gerando novos caches de performance..."
 /usr/bin/php8.3 artisan config:cache
 /usr/bin/php8.3 artisan route:cache
 /usr/bin/php8.3 artisan view:cache

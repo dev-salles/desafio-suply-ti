@@ -9,12 +9,9 @@ use Illuminate\Support\Facades\Http;
 
 class RodoviaSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // 1. Busca todas as UFs cadastradas no seu banco
+        // 1. Busca todas as UFs
         $ufs = Uf::all();
         $dataAtual = now()->format('Y-m-d');
 
@@ -22,8 +19,8 @@ class RodoviaSeeder extends Seeder
             $this->command->info("Buscando rodovias para a UF: {$uf->sigla}...");
 
             try {
-                // 2. Faz a requisição para a API do DNIT para cada UF
-                $response = Http::get("https://servicos.dnit.gov.br/sgplan/apigeo/snv/listarbrporuf", [
+                // 2. Faz a requisição UMA VEZ por UF com timeout de 15 segundos
+                $response = Http::timeout(15)->get("https://servicos.dnit.gov.br/sgplan/apigeo/snv/listarbrporuf", [
                     'data' => $dataAtual,
                     'uf'   => $uf->sigla
                 ]);
@@ -31,16 +28,16 @@ class RodoviaSeeder extends Seeder
                 if ($response->successful()) {
                     $dados = $response->json();
 
-                    // 3. Verifica se o atributo 'lista_br' existe (ex: "101,104,110")
                     if (isset($dados['lista_br']) && !empty($dados['lista_br'])) {
+                        // Transforma a string "101,116,230" em um array
                         $brs = explode(',', $dados['lista_br']);
 
                         foreach ($brs as $br) {
-                            // 4. Salva ou atualiza garantindo que não haverá duplicatas por UF
+                            // 3. Apenas salva ou atualiza os dados que já recebemos no JSON
                             Rodovia::updateOrCreate(
                                 [
-                                    'nome'  => trim($br), // O número da BR (ex: 101)
-                                    'uf_id' => $uf->id    // O ID da UF relacionada
+                                    'nome'  => trim($br), 
+                                    'uf_id' => $uf->id    
                                 ],
                                 [
                                     'updated_at' => now()
