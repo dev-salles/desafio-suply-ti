@@ -2,19 +2,24 @@
 set -e
 cd /var/www/html
 
-echo "Limpando configurações e forçando driver de arquivo..."
+echo "Forçando drivers de produção..."
 
-# Forçamos o driver de cache para 'file' para evitar que o Laravel tente conectar no MySQL/Postgres antes da hora
-/usr/bin/php8.3 artisan config:clear --env=production
-/usr/bin/php8.3 artisan cache:clear --env=production
+# O segredo está aqui: passamos as variáveis DIRETAMENTE no comando para ignorar o padrão
+export DB_CONNECTION=pgsql
+export CACHE_STORE=file
+export SESSION_DRIVER=file
+
+echo "Limpando caches sem tocar no banco de dados..."
+/usr/bin/php8.3 artisan config:clear
+/usr/bin/php8.3 artisan cache:clear
 
 if [ ! -z "$DATABASE_URL" ]; then
     echo "Configurando banco de dados PostgreSQL..."
-    # Rodamos a migration garantindo que a conexão seja pgsql
+    # Rodamos a migration garantindo que ele não tente usar MySQL
     /usr/bin/php8.3 artisan migrate --force --database=pgsql
 fi
 
-echo "Gerando caches de performance..."
+echo "Gerando novos caches..."
 /usr/bin/php8.3 artisan config:cache
 /usr/bin/php8.3 artisan route:cache
 /usr/bin/php8.3 artisan view:cache
