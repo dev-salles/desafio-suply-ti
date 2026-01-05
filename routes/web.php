@@ -1,8 +1,9 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TrechoController;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 // 1. Rota Raiz (Página Welcome)
@@ -39,5 +40,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // 3. APIs auxiliares (Se elas precisarem de login, mova-as para dentro do grupo acima)
 Route::get('/api/ufs', [TrechoController::class, 'getUfs']);
 Route::get('/api/rodovias/{uf}', [TrechoController::class, 'getRodovias']);
+
+Route::get('/instalar-dados-projeto', function () {
+    // Aumenta o tempo de execução do PHP para este processo não travar
+    set_time_limit(300); 
+
+    try {
+        echo "Iniciando Seeding...<br>";
+        Artisan::call('db:seed', ['--force' => true]);
+        return "Dados instalados com sucesso! Verifique o DBeaver.";
+    } catch (\Exception $e) {
+        return "Erro ao rodar seed: " . $e->getMessage();
+    }
+});
 
 require __DIR__.'/auth.php';
