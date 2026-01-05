@@ -15,9 +15,21 @@ echo "Limpando caches..."
 /usr/bin/php8.3 artisan cache:clear
 
 if [ ! -z "$DATABASE_URL" ]; then
-    echo "Configurando banco de dados e populando tabelas (Seed)..."
-    # O comando abaixo roda as migrações e, em seguida, os seeders
+    echo "Configurando banco de dados e verificando migrações..."
+    # Garante que a estrutura das tabelas está ok
     /usr/bin/php8.3 artisan migrate --force
+
+    echo "--------------------------------------------------------"
+    echo "INICIANDO POPULAÇÃO DE RODOVIAS (Via API DNIT)"
+    echo "Atenção: Este processo pode demorar alguns minutos..."
+    echo "--------------------------------------------------------"
+    
+    # Executa especificamente o seeder de rodovias
+    /usr/bin/php8.3 artisan db:seed --class=RodoviaSeeder --force
+    
+    echo "--------------------------------------------------------"
+    echo "POPULAÇÃO DE RODOVIAS FINALIZADA!"
+    echo "--------------------------------------------------------"
 fi
 
 echo "Gerando novos caches de performance..."
