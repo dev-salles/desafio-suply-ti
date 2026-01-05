@@ -17,7 +17,7 @@ echo "Limpando caches..."
 if [ ! -z "$DATABASE_URL" ]; then
     echo "Configurando banco de dados e populando tabelas (Seed)..."
     # O comando abaixo roda as migrações e, em seguida, os seeders
-    /usr/bin/php8.3 artisan migrate --force --seed
+    /usr/bin/php8.3 artisan migrate --force
 fi
 
 echo "Gerando novos caches de performance..."
