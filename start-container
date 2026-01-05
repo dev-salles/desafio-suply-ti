@@ -1,21 +1,17 @@
 #!/usr/bin/env bash
-
-# Aborta o script se algum comando falhar
 set -e
-
-# Garante que estamos no diretório correto
 cd /var/www/html
 
-# Limpa caches antigos antes de qualquer coisa para garantir que o DB_CONNECTION=pgsql seja lido
-echo "Limpando configurações prévias..."
-/usr/bin/php8.3 artisan config:clear
-/usr/bin/php8.3 artisan cache:clear
+echo "Limpando configurações e forçando driver de arquivo..."
 
-# Tenta rodar as migrations se a variável DATABASE_URL estiver presente
+# Forçamos o driver de cache para 'file' para evitar que o Laravel tente conectar no MySQL/Postgres antes da hora
+/usr/bin/php8.3 artisan config:clear --env=production
+/usr/bin/php8.3 artisan cache:clear --env=production
+
 if [ ! -z "$DATABASE_URL" ]; then
-    echo "Detectada DATABASE_URL. Configurando banco de dados PostgreSQL..."
-    # O comando migrate agora deve funcionar pois o cache foi limpo acima
-    /usr/bin/php8.3 artisan migrate --force
+    echo "Configurando banco de dados PostgreSQL..."
+    # Rodamos a migration garantindo que a conexão seja pgsql
+    /usr/bin/php8.3 artisan migrate --force --database=pgsql
 fi
 
 echo "Gerando caches de performance..."
@@ -24,6 +20,4 @@ echo "Gerando caches de performance..."
 /usr/bin/php8.3 artisan view:cache
 
 echo "Iniciando o Supervisor..."
-
-# Inicia o supervisord em primeiro plano (-n)
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
