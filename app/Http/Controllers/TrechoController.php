@@ -98,7 +98,7 @@ class TrechoController extends Controller
         $trecho->update($validated);
 
         session()->flash('success', 'Trecho atualizado com sucesso!');
-    
+
         return redirect()->route('trechos.index');
     }
 
@@ -174,24 +174,22 @@ class TrechoController extends Controller
 
     public function getRodovias($uf)
     {
-        $dataAtual = now()->format('Y-m-d');
-        $cacheKey = "rodovias_v4_{$uf}_{$dataAtual}";
+        // Usamos o Cache para não sobrecarregar o banco, mas agora com dados internos
+        $cacheKey = "rodovias_internas_uf_{$uf}";
 
-        $rodovias = Cache::remember($cacheKey, 86400, function () use ($uf, $dataAtual) {
-            $response = Http::get("https://servicos.dnit.gov.br/sgplan/apigeo/snv/listarbrporuf", [
-                'data' => $dataAtual,
-                'uf'   => $uf
-            ]);
+        $rodovias = Cache::remember($cacheKey, 86400, function () use ($uf) {
+            // 1. Buscamos a UF pela sigla para pegar o ID correto no banco
+            $ufModel = \App\Models\Uf::where('sigla', $uf)->first();
 
-            $dados = $response->json();
-
-            // Verificamos se o atributo 'lista_br' existe no retorno
-            if (isset($dados['lista_br']) && !empty($dados['lista_br'])) {
-                // Transforma a string "101,104..." em um array [101, 104...]
-                return explode(',', $dados['lista_br']);
+            if (!$ufModel) {
+                return [];
             }
 
-            return []; // Retorna vazio caso não encontre o atributo
+            // 2. Buscamos as rodovias vinculadas a esse ID na nossa tabela 'rodovias'
+            // que você acabou de popular via DBeaver
+            return \App\Models\Rodovia::where('uf_id', $ufModel->id)
+                ->orderBy('nome')
+                ->pluck('nome'); // O pluck retorna apenas o array de nomes ['101', '116'...]
         });
 
         return response()->json($rodovias);
