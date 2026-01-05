@@ -2,21 +2,22 @@
 set -e
 cd /var/www/html
 
-echo "Forçando drivers de produção..."
+echo "Forçando drivers e porta de produção..."
 
-# O segredo está aqui: passamos as variáveis DIRETAMENTE no comando para ignorar o padrão
+# Forçamos as variáveis de ambiente
 export DB_CONNECTION=pgsql
+export DB_PORT=5432
 export CACHE_STORE=file
 export SESSION_DRIVER=file
 
-echo "Limpando caches sem tocar no banco de dados..."
+echo "Limpando caches..."
 /usr/bin/php8.3 artisan config:clear
 /usr/bin/php8.3 artisan cache:clear
 
 if [ ! -z "$DATABASE_URL" ]; then
-    echo "Configurando banco de dados PostgreSQL..."
-    # Rodamos a migration garantindo que ele não tente usar MySQL
-    /usr/bin/php8.3 artisan migrate --force --database=pgsql
+    echo "Configurando banco de dados PostgreSQL na porta 5432..."
+    # Rodamos a migration
+    /usr/bin/php8.3 artisan migrate --force
 fi
 
 echo "Gerando novos caches..."
