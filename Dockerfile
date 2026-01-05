@@ -3,7 +3,7 @@ FROM ubuntu:24.04
 LABEL maintainer="Taylor Otwell"
 
 ARG WWWGROUP
-ARG NODE_VERSION=24
+ARG NODE_VERSION=20
 ARG MYSQL_CLIENT="mysql-client"
 ARG POSTGRES_VERSION=18
 
@@ -21,6 +21,7 @@ RUN echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99custom && \
     echo "Acquire::http::No-Cache true;" >> /etc/apt/apt.conf.d/99custom && \
     echo "Acquire::BrokenProxy    true;" >> /etc/apt/apt.conf.d/99custom
 
+# Instalação de dependências do sistema
 RUN apt-get update && apt-get upgrade -y \
     && mkdir -p /etc/apt/keyrings \
     && apt-get install -y gnupg gosu curl ca-certificates zip unzip git supervisor sqlite3 libcap2-bin libpng-dev python3 dnsutils librsvg2-bin fswatch ffmpeg nano  \
@@ -42,40 +43,33 @@ RUN apt-get update && apt-get upgrade -y \
     && apt-get update \
     && apt-get install -y nodejs \
     && npm install -g npm \
-    && npm install -g pnpm \
-    && npm install -g bun \
     && npx playwright install-deps \
-    && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | tee /etc/apt/keyrings/yarn.gpg >/dev/null \
-    && echo "deb [signed-by=/etc/apt/keyrings/yarn.gpg] https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list \
     && curl -sS https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee /etc/apt/keyrings/pgdg.gpg >/dev/null \
     && echo "deb [signed-by=/etc/apt/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt noble-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && apt-get update \
-    && apt-get install -y yarn \
     && apt-get install -y $MYSQL_CLIENT \
     && apt-get install -y postgresql-client-$POSTGRES_VERSION \
     && apt-get -y autoremove \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Copia o código do projeto para o container
-COPY . /var/www/html
-
-# Ajusta permissões para o usuário sail
-RUN chown -R sail:sail /var/www/html
-
-# Instala as dependências do PHP (Composer)
-RUN composer install --no-dev --optimize-autoloader
-
-# Instala as dependências do JS e gera o build do Vite
-RUN npm install && npm run build
-
 RUN setcap "cap_net_bind_service=+ep" /usr/bin/php8.3
 
-RUN userdel -r ubuntu
+# --- CRIAÇÃO DO USUÁRIO PRIMEIRO ---
+RUN userdel -r ubuntu || true
 RUN groupadd --force -g $WWWGROUP sail
 RUN useradd -ms /bin/bash --no-user-group -g $WWWGROUP -u 1337 sail
+
+# --- DEPOIS COPIAMOS O CÓDIGO E DEFINIMOS PERMISSÕES ---
+COPY . /var/www/html
+RUN chown -R sail:sail /var/www/html
 RUN git config --global --add safe.directory /var/www/html
 
+# Instalação de dependências do Projeto
+RUN composer install --no-dev --optimize-autoloader
+RUN npm install && npm run build
+
+# Configurações do Sail
 COPY start-container /usr/local/bin/start-container
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY php.ini /etc/php/8.3/cli/conf.d/99-sail.ini
