@@ -11,8 +11,8 @@ WORKDIR /var/www/html
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
-# Atualizamos o comando para ser direto, evitando falhas de variáveis de ambiente no Supervisor
-ENV SUPERVISOR_PHP_COMMAND="/usr/bin/php -d variables_order=EGPCS /var/www/html/artisan serve --host=0.0.0.0 --port=80"
+# Definimos o caminho absoluto para o PHP 8.3
+ENV SUPERVISOR_PHP_COMMAND="/usr/bin/php8.3 -d variables_order=EGPCS /var/www/html/artisan serve --host=0.0.0.0 --port=80"
 ENV SUPERVISOR_PHP_USER="root"
 ENV PLAYWRIGHT_BROWSERS_PATH=0
 
@@ -54,7 +54,7 @@ RUN apt-get update && apt-get upgrade -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN setcap "cap_net_bind_service=+ep" /usr/bin/php8.3
+# --- REMOVIDO SETCAP (Causa erro 126 no Render) ---
 
 # --- CRIAÇÃO DO USUÁRIO ---
 RUN userdel -r ubuntu || true
@@ -64,9 +64,9 @@ RUN useradd -ms /bin/bash --no-user-group -g $WWWGROUP -u 1337 sail
 # --- CÓDIGO E PERMISSÕES ---
 COPY . /var/www/html
 
-# Ajuste crítico de permissões para evitar EPERM no Render
 RUN mkdir -p /var/www/html/storage/logs /var/www/html/bootstrap/cache \
     && chown -R root:root /var/www/html \
+    && chmod -R 755 /var/www/html \
     && chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
 
 RUN git config --global --add safe.directory /var/www/html
@@ -75,8 +75,8 @@ RUN git config --global --add safe.directory /var/www/html
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 
-# Limpa caches residuais do ambiente de desenvolvimento
-RUN php artisan config:clear && php artisan route:clear
+# Limpa caches e garante permissão de execução no binário PHP
+RUN /usr/bin/php8.3 artisan config:clear && chmod +x /usr/bin/php8.3
 
 # Configurações do Sail
 COPY start-container /usr/local/bin/start-container
@@ -86,7 +86,6 @@ RUN chmod +x /usr/local/bin/start-container
 
 EXPOSE 80/tcp
 
-# Forçamos o container a rodar como root para que o Supervisor tenha privilégios de rede
 USER root
 
 ENTRYPOINT ["start-container"]

@@ -3,19 +3,18 @@
 # Aborta o script se algum comando falhar
 set -e
 
-# Se a variável DATABASE_URL existir, tenta rodar as migrations antes de subir o site
+# Usamos o caminho completo /usr/bin/php8.3 para evitar Operation Not Permitted
 if [ ! -z "$DATABASE_URL" ]; then
     echo "Configurando banco de dados..."
-    php artisan migrate --force
+    /usr/bin/php8.3 /var/www/html/artisan migrate --force
 fi
 
-# Limpa e gera os caches necessários para performance em produção
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+echo "Limpando e gerando caches..."
+/usr/bin/php8.3 /var/www/html/artisan config:cache
+/usr/bin/php8.3 /var/www/html/artisan route:cache
+/usr/bin/php8.3 /var/www/html/artisan view:cache
 
 echo "Iniciando o Supervisor..."
 
-# Inicia o supervisord em primeiro plano (-n) 
-# Isso mantém o container vivo e gerencia o processo do PHP
+# Inicia o supervisord em primeiro plano
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
