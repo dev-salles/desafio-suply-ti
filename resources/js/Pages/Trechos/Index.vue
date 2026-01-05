@@ -100,7 +100,7 @@ const excluirTrecho = (id) => {
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex items-center justify-end gap-4">
                                         <Link :href="route('trechos.show', trecho.id)" class="text-blue-600 hover:text-blue-900 bg-blue-100 p-2 rounded-lg">
-                                            Visualizar
+                                            Visualizar Mapa
                                         </Link>
                                         <Link :href="route('trechos.edit', trecho.id)" class="text-indigo-600 hover:text-indigo-900 font-medium">
                                             Editar
