@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, Link } from "@inertiajs/vue3";
-import { ref, onMounted, nextTick } from "vue"; // Adicionei o nextTick
+import { ref, onMounted, nextTick } from "vue";
 import "leaflet/dist/leaflet.css";
 import {
     LMap,
@@ -10,6 +10,7 @@ import {
     LMarker,
     LPopup,
 } from "@vue-leaflet/vue-leaflet";
+import axios from "axios"; // Importação necessária para busca direta
 
 const props = defineProps({
     trecho: Object,
@@ -19,26 +20,43 @@ const zoom = ref(13);
 const center = ref([-15.7801, -47.9292]); // Brasília como fallback
 const rotaCoordenadas = ref([]);
 const map = ref(null);
+const carregandoMapa = ref(false); // Estado para feedback visual
 
 onMounted(async () => {
-    console.log("DADOS BRUTOS DA API:", props.trecho.geo); // ABRA O F12 E VEJA ISSO
+    let geoData = props.trecho.geo;
 
-    if (props.trecho.geo && props.trecho.geo.geometry) {
-        const rawCoords = props.trecho.geo.geometry.coordinates;
+    // LÓGICA DE FALLBACK: Se o dado geográfico não veio do banco, busca direto no navegador (Client-side)
+    if (!geoData || !geoData.geometry) {
+        carregandoMapa.value = true;
+        try {
+            console.log("Buscando GeoJSON via navegador (contornando bloqueio do servidor)...");
+            const response = await axios.get("https://servicos.dnit.gov.br/sgplan/apigeo/snv/getGeoJson", {
+                params: {
+                    uf: props.trecho.uf?.sigla,
+                    br: props.trecho.rodovia?.nome || props.trecho.rodovia_id
+                }
+            });
+            geoData = response.data;
+        } catch (error) {
+            console.error("Erro na busca direta ao DNIT:", error);
+        } finally {
+            carregandoMapa.value = false;
+        }
+    }
+
+    // PROCESSAMENTO DE COORDENADAS
+    if (geoData && geoData.geometry) {
+        const rawCoords = geoData.geometry.coordinates;
         
-        // Verifica se é um MultiLineString ou LineString simples
-        // GeoJSON de rodovias as vezes vem em arrays aninhados [[[lng, lat]]]
+        // Algumas rodovias vêm como MultiLineString (arrays triplos). 
+        // O flat(1) garante que tenhamos uma lista simples de pontos [lng, lat]
         const processedCoords = Array.isArray(rawCoords[0][0]) 
-            ? rawCoords[0] 
+            ? rawCoords.flat(1) 
             : rawCoords;
 
         const coords = processedCoords.map(coord => {
-            // Latitude deve ser negativa (aprox -15 a -30 para o Brasil)
-            // Longitude deve ser negativa (aprox -40 a -60 para o Brasil)
-            const lat = coord[1];
-            const lng = coord[0];
-            
-            return [lat, lng];
+            // Inverte de [Longitude, Latitude] para [Latitude, Longitude] (padrão Leaflet)
+            return [coord[1], coord[0]];
         });
 
         rotaCoordenadas.value = coords;
@@ -50,7 +68,7 @@ onMounted(async () => {
             setTimeout(() => {
                 if (map.value && map.value.leafletObject) {
                     map.value.leafletObject.invalidateSize();
-                    // O fitBounds é o que vai te tirar do oceano e te levar pro MS
+                    // Ajusta o enquadramento do mapa para mostrar toda a rodovia
                     map.value.leafletObject.fitBounds(coords, { padding: [20, 20] });
                 }
             }, 300);
@@ -95,6 +113,14 @@ onMounted(async () => {
                         <div class="p-3 bg-blue-50 rounded">
                             <strong>KM Final:</strong> {{ trecho.km_final }}
                         </div>
+                    </div>
+
+                    <div v-if="carregandoMapa" class="mb-4 p-3 bg-blue-50 border-l-4 border-blue-500 text-blue-700 text-sm animate-pulse flex items-center">
+                        <svg class="animate-spin h-4 w-4 mr-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Buscando traçado da rodovia diretamente no servidor do DNIT para contornar bloqueios...
                     </div>
 
                     <div
