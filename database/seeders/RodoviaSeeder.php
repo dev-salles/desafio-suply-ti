@@ -14,7 +14,7 @@ class RodoviaSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Busca todas as UFs cadastradas no seu banco
+        // 1. Busca todas as UFs cadastradas banco
         $ufs = Uf::all();
         $dataAtual = now()->format('Y-m-d');
 

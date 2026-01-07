@@ -16,7 +16,7 @@ Route::get('/', function () {
 // 2. Grupo de Rotas Protegidas (Tudo aqui exige login)
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // Listagem e Dashboard
+    // Dashboard | Tela com aviso que o usuário está logado
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
@@ -36,7 +36,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// 3. APIs auxiliares (Se elas precisarem de login, mova-as para dentro do grupo acima)
+// 3. APIs auxiliares
 Route::get('/api/ufs', [TrechoController::class, 'getUfs']);
 Route::get('/api/rodovias/{uf}', [TrechoController::class, 'getRodovias']);
 

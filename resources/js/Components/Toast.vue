@@ -33,7 +33,7 @@ const props = defineProps(['message', 'type']);
 const visible = ref(true);
 
 onMounted(() => {
-    // Definimos 4 segundos para dar tempo do usuário ler
+    // Definido 4 segundos para dar tempo do usuário ler
     setTimeout(() => {
         visible.value = false;
     }, 4000);
@@ -41,7 +41,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 1. Animação de Entrada e Saída (O efeito que você enviou) */
+/* 1. Animação de Entrada e Saída */
 .slide-enter-active { 
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
 }

@@ -17,8 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->redirectUsersTo(fn () => route('trechos.index')); 
 
+        // Validaçâo da tela de login caso o usuário não esteja logado.
         $middleware->redirectGuestsTo(function () {
-            // Aqui enviamos a mensagem de erro para a sessão antes de ir para o login | Infelizmente não deu tempo de corrigir isso.
             session()->flash('error', 'É necessário estar logado para acessar esta área!');
             return route('login');
         });

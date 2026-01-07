@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
     //     'email' => 'test@example.com',
     // ]);
 
-    // Mantenha apenas os seeders que você realmente precisa:
+    // Mantenha apenas os seeders que precisamos:
     $this->call([
         UfSeeder::class,
         RodoviaSeeder::class,

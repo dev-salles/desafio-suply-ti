@@ -18,7 +18,7 @@ class TrechoController extends Controller
      */
     public function index()
     {
-        // Substituímos o get() por paginate(10) para gerar os links de página
+        // Paginate(10) para gerar os links de página
         $trechos = Trecho::with(['uf', 'rodovia'])
         ->latest()
         ->paginate(10);
@@ -63,7 +63,7 @@ class TrechoController extends Controller
             'km_final'        => 'required|numeric|gt:km_inicial',
         ]);
 
-        // 1. Busca a rodovia real no seu banco para pegar o ID correto
+        // Busca a rodovia real no seu banco para pegar o ID correto
         $rodoviaReal = Rodovia::where('uf_id', $validated['uf_id'])
             ->where(function ($query) use ($validated) {
                 $query->where('nome', $validated['rodovia_id'])
@@ -74,10 +74,10 @@ class TrechoController extends Controller
             return redirect()->back()->withErrors(['rodovia_id' => 'Rodovia não encontrada no banco local.']);
         }
 
-        // 2. Atualiza o valor para o ID do banco antes de salvar
+        // Atualiza o valor para o ID do banco antes de salvar
         $validated['rodovia_id'] = $rodoviaReal->id;
 
-        // 3. (Opcional) Se quiser atualizar a GEO-Localização no update também:
+        // Atualiza a GEO-Localização no update também:
         $ufSigla = Uf::find($validated['uf_id'])->sigla;
         $rodoviaDnit = preg_replace('/[^0-9]/', '', $rodoviaReal->nome);
 
