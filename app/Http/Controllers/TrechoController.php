@@ -8,6 +8,7 @@ use App\Models\Trecho;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
@@ -80,25 +81,77 @@ class TrechoController extends Controller
         // Atualiza a GEO-Localização no update também:
         $ufSigla = Uf::find($validated['uf_id'])->sigla;
         $rodoviaDnit = preg_replace('/[^0-9]/', '', $rodoviaReal->nome);
+        $dataFormatada = date('Y-m-d', strtotime($validated['data_referencia']));
+
+
+        Log::info("Consultando DNIT: BR-{$rodoviaDnit}, KM {$validated['km_inicial']} até {$validated['km_final']}");
 
         $response = Http::get("https://servicos.dnit.gov.br/sgplan/apigeo/rotas/espacializarlinha", [
             'br'      => $rodoviaDnit,
-            'tipo'    => $validated['tipo'],
+            'tipo'    => $validated['tipo'], 
             'uf'      => strtoupper($ufSigla),
-            'cd_tipo' => 'null',
-            'data'    => date('Y-m-d', strtotime($validated['data_referencia'])),
+            'cd_tipo' => 0,
+            'data'    => $dataFormatada,
             'kmi'     => $validated['km_inicial'],
             'kmf'     => $validated['km_final'],
         ]);
 
+
         if ($response->successful()) {
-            $validated['geo'] = $response->json();
+            $dadosGeo = $response->json();
+            $coordenadasUnificadas = [];
+            $propriedades = [];
+
+            if (isset($dadosGeo['features'][0])) {
+                // Formato FeatureCollection
+                $geometriaBase = $dadosGeo['features'][0]['geometry'];
+                $propriedades = $dadosGeo['features'][0]['properties'] ?? [];
+
+                foreach ($dadosGeo['features'] as $feature) {
+                    $tipo = $feature['geometry']['type'];
+                    $coords = $feature['geometry']['coordinates'];
+                    if ($tipo === 'LineString') {
+                        $coordenadasUnificadas = array_merge($coordenadasUnificadas, $coords);
+                    } elseif ($tipo === 'MultiLineString') {
+                        foreach ($coords as $linha) {
+                            $coordenadasUnificadas = array_merge($coordenadasUnificadas, $linha);
+                        }
+                    }
+                }
+            } elseif (isset($dadosGeo['geometry'])) {
+
+                $geometriaBase = $dadosGeo['geometry'];
+                $propriedades = $dadosGeo['properties'] ?? [];
+                $tipo = $geometriaBase['type'];
+                $coords = $geometriaBase['coordinates'];
+
+                if ($tipo === 'MultiLineString') {
+                    foreach ($coords as $linha) {
+                        $coordenadasUnificadas = array_merge($coordenadasUnificadas, $linha);
+                    }
+                } else {
+                    $coordenadasUnificadas = $coords;
+                }
+            }
+
+            if (!empty($coordenadasUnificadas)) {
+                $validated['geo'] = [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'LineString',
+                        'coordinates' => $coordenadasUnificadas
+                    ],
+                    'properties' => $propriedades
+                ];
+            } else {
+                $validated['geo'] = null;
+            }
         }
 
         $trecho->update($validated);
 
         session()->flash('success', 'Trecho atualizado com sucesso!');
-    
+
         return redirect()->route('trechos.index');
     }
 
@@ -145,16 +198,21 @@ class TrechoController extends Controller
 
         $response = Http::get("https://servicos.dnit.gov.br/sgplan/apigeo/rotas/espacializarlinha", [
             'br'      => $rodovia,
-            'tipo'    => $validated['tipo'],
+            'tipo'    => $validated['tipo'], // Certifique-se que aqui vai 'P' ou 'B' se for o eixo principal
             'uf'      => strtoupper($ufSigla),
-            'cd_tipo' => 'null',
+            'cd_tipo' => 0,
             'data'    => $dataFormatada,
             'kmi'     => $validated['km_inicial'],
             'kmf'     => $validated['km_final'],
         ]);
 
         if ($response->successful()) {
-            $validated['geo'] = $response->json();
+            $dadosGeo = $response->json();
+
+            // VERIFICAÇÃO CRÍTICA:
+            // Se a API retornar sucesso mas o array de coordenadas for o mesmo,
+            // a API do DNIT não encontrou o segmento e deu um "fallback" para a rodovia toda.
+            $validated['geo'] = $dadosGeo;
         }
 
         Trecho::create($validated);
