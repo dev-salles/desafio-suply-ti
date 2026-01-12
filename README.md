@@ -39,6 +39,6 @@ O projeto utiliza o **Docker** para padronizar o ambiente de desenvolvimento, ga
 4. Crie um alias persistente para facilitar as operações: `echo "alias sail='./vendor/bin/sail'" >> ~/.bashrc && source ~/.bashrc`
 5. Instalação das Dependências (Sem PHP local):
     `docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html laravelsail/php83-composer:latest composer install --ignore-platform-reqs`
-6. Suba os containers: `./vendor/bin/sail up -d` (ou `docker-compose up -d`)
+6. Suba os containers: `sail up -d` (ou `docker-compose up -d`)
 7. Execute as migrations dentro do container: `sail artisan key:generate && sail artisan migrate:fresh --seed`
 8. Instale as dependências de front: `sail npm install && sail npm run dev`
